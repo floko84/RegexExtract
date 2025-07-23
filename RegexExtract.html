@@ -1,0 +1,138 @@
+<html>
+<head>
+    <title>RegEx Text Extractor</title>
+</head>
+<body>
+    <table style="width: 100%;">
+		<colgroup span="2" style="width: 50%;" />
+		<tbody>
+			<tr>
+				<td>
+					<label for="txtInput">Input Text</label>
+					<textarea id="txtInput" rows="30" style="width: 100%; white-space: pre; resize: none;"></textarea>
+				</td>
+				<td>
+					<label for="txtOutput">Output Text</label>
+					<textarea id="txtOutput" readonly="readonly" rows="30" style="width: 100%; white-space: pre; resize: none;"></textarea>
+				</td>
+			</tr>
+			<tr>
+				<td colspan="2">
+					<label for="txtRegex">Search RegEx</label>
+					<textarea id="txtRegex" rows="3" style="width: 100%; resize: none;"></textarea>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<label for="txtReplacement">Replacement</label>
+					<textarea id="txtReplacement" rows="10" style="width: 100%; resize: none;" placeholder="$&amp;"></textarea>
+				</td>
+				<td>
+					<table style="width: 100%;">
+						<caption><em>Special replacement patterns</em></caption>
+						<thead>
+							<tr>
+								<th>Pattern</th>
+								<th>Inserts</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td><code>$$</code></td>
+								<td>Inserts a <code>"$"</code>.</td>
+							</tr>
+							<tr>
+								<td><code>$&amp;</code></td>
+								<td>Inserts the matched substring.</td>
+							</tr>
+							<tr>
+								<td><code>$n</code></td>
+								<td>Inserts the <code>n</code>th (<code>1</code>-indexed) capturing group where <code>n</code> is a positive integer less than 100.</td>
+							</tr>
+							<tr>
+								<td><code>$&lt;Name&gt;</code></td>
+								<td>Inserts the named capturing group where <code>Name</code> is the group name.</td>
+							</tr>
+						</tbody>
+					</table>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<input type="checkbox" id="chkIgnoreCase" /><label for="chkIgnoreCase">Ignore Case</label><br />
+					<input type="checkbox" id="chkMultiline" /><label for="chkMultiline">Multiline</label><br />
+					<input type="checkbox" id="chkDotAll" /><label for="chkDotAll">Dot Matches Newline</label>
+				</td>
+				<td style="text-align: end;">
+					<button type="button" id="btnClear">Clear</button>
+					<button type="button" id="btnExtract"><strong>Extract</strong></button>
+				</td>
+			</tr>
+		</tbody>
+    </table>
+    <script type="text/javascript">
+        var rgxReplacement = /\$(\$|&)|\$(\d{1,2})|\$<([^>]+)>/g;
+
+        var btnExtract = document.getElementById('btnExtract');
+		var btnClear = document.getElementById('btnClear');
+
+        var txtInput = document.getElementById('txtInput');
+        var txtOutput = document.getElementById('txtOutput');
+        var txtRegex = document.getElementById('txtRegex');
+        var txtReplacement = document.getElementById('txtReplacement');
+
+        var chkIgnoreCase = document.getElementById('chkIgnoreCase');
+        var chkMultiline = document.getElementById('chkMultiline');
+        var chkDotAll = document.getElementById('chkDotAll');
+
+        txtRegex.value = window.localStorage.getItem('txtRegex') || txtRegex.value;
+        txtReplacement.value = window.localStorage.getItem('txtReplacement') || txtReplacement.value;
+
+        btnExtract.onclick = function () {
+            window.localStorage.setItem('txtRegex', txtRegex.value);
+            window.localStorage.setItem('txtReplacement', txtReplacement.value);
+
+            btnExtract.disabled = true;
+			btnClear.disabled = true;
+
+			txtOutput.value = "";
+
+            window.setTimeout(function () {
+                var strReplacement = String(txtReplacement.value);
+                var strFlags = 'g';
+                if (chkIgnoreCase.checked) strFlags += 'i';
+                if (chkMultiline.checked) strFlags += 'm';
+                if (chkDotAll.checked) strFlags += 's';
+
+                String(txtInput.value).replace(new RegExp(txtRegex.value, strFlags), function (strMatch) {
+                    var arrGroups = arguments;
+                    var objNamedGroups = arrGroups[arrGroups.length - 1];
+
+                    txtOutput.value += strReplacement
+                        ? strReplacement.replace(rgxReplacement, function (strPart, p1, p2, p3) {
+                            switch (p1) {
+                                case '$':
+                                    return '$';
+                                case '&':
+                                    return strMatch;
+                            }
+                            if (p2) return arrGroups[p2];
+                            if (p3) return objNamedGroups[p3];
+                            return strPart;
+                        })
+                        : strMatch;
+
+                    return strMatch;
+                });
+
+                btnExtract.disabled = false;
+                btnClear.disabled = false;
+            });
+        }
+		
+		btnClear.onclick = function () {
+			txtOutput.value = "";
+		}
+    </script>
+</body>
+</html>
