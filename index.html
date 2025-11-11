@@ -71,8 +71,6 @@
 		</tbody>
     </table>
     <script type="text/javascript">
-        var rgxReplacement = /\$(\$|&)|\$(\d{1,2})|\$<([^>]+)>/g;
-
         var btnExtract = document.getElementById('btnExtract');
 		var btnClear = document.getElementById('btnClear');
 
@@ -98,31 +96,21 @@
 			txtOutput.value = "";
 
             window.setTimeout(function () {
-                var strReplacement = String(txtReplacement.value);
-                var strFlags = 'g';
+                var strFlags = '';
                 if (chkIgnoreCase.checked) strFlags += 'i';
                 if (chkMultiline.checked) strFlags += 'm';
                 if (chkDotAll.checked) strFlags += 's';
-
-                String(txtInput.value).replace(new RegExp(txtRegex.value, strFlags), function (strMatch) {
-                    var arrGroups = arguments;
-                    var objNamedGroups = arrGroups[arrGroups.length - 1];
-
+				
+				var rgxRegex = new RegExp(txtRegex.value, 'g' + strFlags);
+				var rgxReplacement = new RegExp(txtRegex.value, strFlags);
+                var strReplacement = String(txtReplacement.value);
+				
+                String(txtInput.value).replace(rgxRegex, function (strMatch) {
                     txtOutput.value += strReplacement
-                        ? strReplacement.replace(rgxReplacement, function (strPart, p1, p2, p3) {
-                            switch (p1) {
-                                case '$':
-                                    return '$';
-                                case '&':
-                                    return strMatch;
-                            }
-                            if (p2) return arrGroups[p2];
-                            if (p3) return objNamedGroups[p3];
-                            return strPart;
-                        })
+                        ? strMatch.replace(rgxReplacement, strReplacement)
                         : strMatch;
 
-                    return strMatch;
+                    return "";
                 });
 
                 btnExtract.disabled = false;
@@ -136,3 +124,4 @@
     </script>
 </body>
 </html>
+
